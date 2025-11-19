@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Store Locator</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;margin:16px;padding:0;color:#111;}
+    h1{font-size:20px;margin-bottom:6px;}
+    label{display:block;margin-top:10px;font-weight:600;}
+    input[type="text"]{
+      width:100%;padding:12px;border:1px solid #cfcfcf;border-radius:6px;font-size:16px;
+      box-sizing:border-box;
+    }
+    .row{display:flex;gap:8px;margin-top:10px;}
+    button{flex:1;padding:12px;font-size:16px;border-radius:6px;border:none;background:#1976d2;color:#fff;}
+    #result{margin-top:18px;padding:12px;border-radius:6px;background:#f7f9fc;border:1px solid #e6eef9;}
+    .notfound{color:#c62828;font-weight:700;}
+    small.hint{display:block;margin-top:8px;color:#666;}
+    .meta{margin-top:8px;color:#444;font-size:13px;}
+  </style>
+</head>
+<body>
+  <h1>Store Locator</h1>
+  <div>Enter store code (example: <code>U21G</code> or <code>2314</code>)</div>
+
+  <label for="code">Store Code</label>
+  <input id="code" type="text" autocomplete="off" placeholder="Enter store code (e.g. U21G)">
+
+  <div class="row">
+    <button id="searchBtn">Search</button>
+    <button id="clearBtn" style="background:#6c757d">Clear</button>
+  </div>
+
+  <div id="result" aria-live="polite"></div>
+  <div class="meta">Data: offline lookup. Codes normalized to uppercase and trimmed.</div>
+
+<script>
+/* ============================
+   Store data (embedded)
+   ============================ */
+const storeData = {
+"U21G":{lane:1,zone:"MP AREA"},
+"U3AB":{lane:2,zone:"MP AREA"},
+"U21O":{lane:3,zone:"MP AREA"},
+"U3DO":{lane:4,zone:"MP AREA"},
+"U21P":{lane:5,zone:"MP AREA"},
+"U3FX":{lane:6,zone:"MP AREA"},
+"U21R":{lane:7,zone:"MP AREA"},
+"U3IR":{lane:8,zone:"MP AREA"},
+"U21U":{lane:9,zone:"MP AREA"},
+"U1IR":{lane:10,zone:"MP AREA"},
+"U249":{lane:11,zone:"MP AREA"},
+"U2MH":{lane:12,zone:"MP AREA"},
+"U28D":{lane:13,zone:"MP AREA"},
+"U2MP":{lane:14,zone:"MP AREA"},
+"U29H":{lane:15,zone:"MP AREA"},
+"U2OU":{lane:16,zone:"MP AREA"},
+"U29U":{lane:17,zone:"MP AREA"},
+"U2PP":{lane:18,zone:"MP AREA"},
+"U2C8":{lane:19,zone:"MP AREA"},
+"U2TK":{lane:20,zone:"MP AREA"},
+"U2CD":{lane:21,zone:"MP AREA"},
+"U2U1":{lane:22,zone:"MP AREA"},
+"U2CE":{lane:23,zone:"MP AREA"},
+"U2V9":{lane:24,zone:"MP AREA"},
+"U2CG":{lane:25,zone:"MP AREA"},
+"U392":{lane:26,zone:"MP AREA"},
+"U2CL":{lane:27,zone:"MP AREA"},
+"U3AC":{lane:28,zone:"MP AREA"},
+"U2DN":{lane:29,zone:"MP AREA"},
+"U3CV":{lane:30,zone:"MP AREA"},
+"TDI1":{lane:31,zone:"MP AREA"},
+"U736":{lane:32,zone:"MP AREA"},
+"U651":{lane:33,zone:"MP AREA"},
+"U1UZ":{lane:34,zone:"MP AREA"},
+"U3QJ":{lane:35,zone:"MP AREA"},
+"U059":{lane:36,zone:"MP AREA"},
+"U3QM":{lane:37,zone:"MP AREA"},
+"U1RB":{lane:38,zone:"MP AREA"},
+"U472":{lane:39,zone:"MP AREA"},
+"U3LR":{lane:40,zone:"MP AREA"},
+"U2YP":{lane:41,zone:"MP AREA"},
+"U2P3":{lane:42,zone:"MP AREA"},
+"U1LR":{lane:43,zone:"MP AREA"},
+"U3FR":{lane:44,zone:"MP AREA"},
+"U1NL":{lane:45,zone:"MP AREA"},
+"FRM5":{lane:46,zone:"MP AREA"},
+"U1NM":{lane:47,zone:"MP AREA"},
+"U2TW":{lane:48,zone:"MP AREA"},
+"U1OU":{lane:49,zone:"MP AREA"},
+"U3CJ":{lane:50,zone:"MP AREA"},
+"U1OV":{lane:51,zone:"MP AREA"},
+"U3GP":{lane:52,zone:"MP AREA"},
+"U1OZ":{lane:53,zone:"MP AREA"},
+"U3SN":{lane:54,zone:"MP AREA"},
+"U2CP":{lane:55,zone:"MP AREA"},
+"U2OL":{lane:56,zone:"MP AREA"},
+"U1UM":{lane:57,zone:"MP AREA"},
+"U2SW":{lane:58,zone:"MP AREA"},
+"U16N":{lane:59,zone:"MP AREA"},
+"U2U8":{lane:60,zone:"MP AREA"},
+
+"U060":{lane:61,zone:"TP-1"},
+"U2BV":{lane:62,zone:"TP-1"},
+"U601":{lane:63,zone:"TP-1"},
+"U301":{lane:64,zone:"TP-1"},
+"U093":{lane:65,zone:"TP-1"},
+"U505":{lane:66,zone:"TP-1"},
+"U167":{lane:67,zone:"TP-1"},
+"2329":{lane:68,zone:"TP-1"},
+"U168":{lane:69,zone:"TP-1"},
+"U2II":{lane:70,zone:"TP-1"},
+"U3GJ":{lane:71,zone:"TP-1"},
+"U3FJ":{lane:72,zone:"TP-1"},
+"U3YJ":{lane:73,zone:"TP-1"},
+"U421":{lane:74,zone:"TP-1"},
+"U3AM":{lane:75,zone:"TP-1"},
+"U1AH":{lane:76,zone:"TP-1"},
+"U3PS":{lane:77,zone:"TP-1"},
+"2568":{lane:78,zone:"TP-1"},
+"2916":{lane:79,zone:"TP-1"},
+"2899":{lane:80,zone:"TP-1"},
+"2316":{lane:81,zone:"TP-1"},
+"2325":{lane:82,zone:"TP-1"},
+"U065":{lane:83,zone:"TP-1"},
+"U267":{lane:84,zone:"TP-1"},
+"U980":{lane:85,zone:"TP-1"},
+"U2DY":{lane:86,zone:"TP-1"},
+"U3FL":{lane:87,zone:"TP-1"},
+"TZ78":{lane:88,zone:"TP-1"},
+"U2FC":{lane:89,zone:"TP-1"},
+"U2GE":{lane:90,zone:"TP-1"},
+"U3GG":{lane:91,zone:"TP-1"},
+"U2GD":{lane:92,zone:"TP-1"},
+"U3FS":{lane:93,zone:"TP-1"},
+"U3UU":{lane:94,zone:"TP-1"},
+"TT57":{lane:95,zone:"TP-1"},
+"U3IQ":{lane:96,zone:"TP-1"},
+"U576":{lane:97,zone:"TP-1"},
+"T35S":{lane:98,zone:"TP-1"},
+"U3IW":{lane:99,zone:"TP-1"},
+
+"2314":{lane:100,zone:"TP-2"},
+"3087":{lane:101,zone:"TP-2"},
+"U1WP":{lane:102,zone:"TP-2"},
+"TNI6":{lane:103,zone:"TP-2"},
+"U1L2":{lane:104,zone:"TP-2"},
+"U086":{lane:105,zone:"TP-2"},
+"TKM7":{lane:106,zone:"TP-2"},
+"FRVE":{lane:107,zone:"TP-2"},
+"U14V":{lane:108,zone:"TP-2"},
+"3035":{lane:109,zone:"TP-2"},
+"U1WR":{lane:110,zone:"TP-2"},
+"U2JH":{lane:111,zone:"TP-2"},
+"U286":{lane:112,zone:"TP-2"},
+"U1OW":{lane:113,zone:"TP-2"},
+"2587":{lane:114,zone:"TP-2"},
+"F1ZP":{lane:115,zone:"TP-2"},
+"T3GC":{lane:116,zone:"TP-2"},
+"T9T3":{lane:117,zone:"TP-2"},
+"T9T7":{lane:118,zone:"TP-2"},
+"T9V5":{lane:119,zone:"TP-2"},
+"T9W3":{lane:120,zone:"TP-2"},
+"U3KA":{lane:121,zone:"TP-2"},
+"U3OG":{lane:122,zone:"TP-2"},
+"U653":{lane:123,zone:"TP-2"},
+"U1IW":{lane:124,zone:"TP-2"},
+"TK5T":{lane:125,zone:"TP-2"},
+"TL7X":{lane:126,zone:"TP-2"},
+"TM3J":{lane:127,zone:"TP-2"},
+"TM4T":{lane:128,zone:"TP-2"},
+"TM4Z":{lane:129,zone:"TP-2"},
+"TM5C":{lane:130,zone:"TP-2"},
+"TM6M":{lane:131,zone:"TP-2"},
+"TM6N":{lane:132,zone:"TP-2"},
+"TM6O":{lane:133,zone:"TP-2"},
+"TM8T":{lane:134,zone:"TP-2"},
+"TN1B":{lane:135,zone:"TP-2"},
+"TN1C":{lane:136,zone:"TP-2"},
+"TN1T":{lane:137,zone:"TP-2"},
+"T9H8":{lane:138,zone:"TP-2"},
+"U949":{lane:139,zone:"TP-2"},
+"U1AG":{lane:140,zone:"TP-2"},
+"U18R":{lane:141,zone:"TP-2"},
+"U1AI":{lane:142,zone:"TP-2"},
+"U1LQ":{lane:143,zone:"TP-2"},
+
+"U143":{lane:144,zone:"GTP"},
+"U3SD":{lane:145,zone:"GTP"},
+"U2CF":{lane:146,zone:"GTP"},
+"U652":{lane:147,zone:"GTP"},
+"U654":{lane:148,zone:"GTP"},
+"U064":{lane:149,zone:"GTP"},
+"U2IJ":{lane:150,zone:"GTP"},
+"U995":{lane:151,zone:"GTP"},
+"U2K3":{lane:152,zone:"GTP"},
+"U177":{lane:153,zone:"GTP"},
+"U2LC":{lane:154,zone:"GTP"},
+"U2MI":{lane:155,zone:"GTP"},
+"U2Y9":{lane:156,zone:"GTP"},
+"U1PA":{lane:157,zone:"GTP"},
+"U3GL":{lane:158,zone:"GTP"},
+"U3HC":{lane:159,zone:"GTP"},
+"U2ND":{lane:160,zone:"GTP"},
+"FRXW":{lane:161,zone:"GTP"},
+"U2LA":{lane:162,zone:"GTP"},
+"U996":{lane:163,zone:"GTP"},
+"U2K8":{lane:164,zone:"GTP"},
+"U050":{lane:165,zone:"GTP"},
+
+/* Additional rows you provided just now */
+"T189":{lane:84,zone:"TP-1"},
+"T1ND":{lane:69,zone:"TP-1"},
+"T1NA":{lane:68,zone:"TP-1"},
+"TR85":{lane:67,zone:"TP-1"},
+"2951":{lane:62,zone:"TP-1"},
+"TALQ":{lane:79,zone:"TP-1"},
+"T1EK":{lane:65,zone:"TP-1"},
+"TZ6Q":{lane:95,zone:"TP-1"}
+};
+
+/* ============================
+   UI logic
+   ============================ */
+const codeInput = document.getElementById('code');
+const resultDiv = document.getElementById('result');
+const searchBtn = document.getElementById('searchBtn');
+const clearBtn = document.getElementById('clearBtn');
+
+function showResult(html){
+  resultDiv.innerHTML = html;
+}
+
+function lookup(){
+  const raw = codeInput.value || "";
+  const code = raw.trim().toUpperCase();
+  if(!code){
+    showResult("<div class='notfound'>Please enter a store code.</div>");
+    return;
+  }
+  const data = storeData[code];
+  if(data){
+    showResult(
+      "<div><strong>Store Code:</strong> " + escapeHtml(code) + "</div>" +
+      "<div><strong>Zone Name:</strong> " + escapeHtml(data.zone) + "</div>" +
+      "<div><strong>Store's Lane No.:</strong> " + escapeHtml(String(data.lane)) + "</div>"
+    );
+  } else {
+    showResult("<div class='notfound'>Store code <strong>" + escapeHtml(code) + "</strong> not found.</div>");
+  }
+}
+
+function escapeHtml(s){
+  return s.replace(/[&<>\"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]; });
+}
+
+searchBtn.addEventListener('click', lookup);
+clearBtn.addEventListener('click', function(){
+  codeInput.value = "";
+  resultDiv.innerHTML = "";
+  codeInput.focus();
+});
+codeInput.addEventListener('keydown', function(e){
+  if(e.key === 'Enter'){ lookup(); }
+});
+
+/* Optional: show an example result on first load (comment out if not wanted) */
+// showResult("Type a store code and press Search (e.g. <strong>U21G</strong>).");
+</script>
+</body>
+</html>
